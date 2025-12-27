@@ -1,0 +1,7 @@
+{
+  "name": "Tactical TUI Hub",
+  "description": "A secure, offline-first quantum-resistant command hub featuring V2 character cards, virtual filesystem, terminal access, and military-grade encryption.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

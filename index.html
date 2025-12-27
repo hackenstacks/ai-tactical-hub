@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tactical TUI Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+    
+    :root {
+      --color-bg: #050505;
+      --color-text: #00ff41;
+      --color-dim: #003b00;
+      --color-accent: #008f11;
+      --color-alert: #ff0000;
+    }
+
+    body.theme-amber {
+      --color-bg: #1a1000;
+      --color-text: #ffb000;
+      --color-dim: #422a00;
+      --color-accent: #cc8800;
+    }
+
+    body.theme-cyan {
+      --color-bg: #00101a;
+      --color-text: #00f0ff;
+      --color-dim: #003344;
+      --color-accent: #00aabb;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      overflow: hidden;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    
+    .theme-text { color: var(--color-text); }
+    .theme-bg { background-color: var(--color-bg); }
+    .theme-border { border-color: var(--color-accent); }
+    .theme-dim-bg { background-color: var(--color-dim); }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--color-bg); }
+    ::-webkit-scrollbar-thumb { background: var(--color-dim); border: 1px solid var(--color-accent); }
+    
+    .crt-scanline {
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(0,0,0,0.1) 50%,
+        rgba(0,0,0,0.1)
+      );
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+    
+    /* ID Card Effect */
+    .id-card-trigger:hover .id-card-popup {
+      display: flex;
+      animation: fadeIn 0.2s ease-out;
+    }
+    
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .xterm-viewport { overflow-y: auto !important; }
+
+    /* D3 Chart styles */
+    .d3-chart .domain { stroke: var(--color-accent); }
+    .d3-chart .tick line { stroke: var(--color-dim); }
+    .d3-chart .tick text { fill: var(--color-text); font-size: 10px; }
+    .d3-chart .grid-line { stroke: var(--color-dim); stroke-opacity: 0.7; shape-rendering: crispEdges; }
+    .d3-chart .line-ingress { fill: none; stroke: var(--color-text); stroke-width: 1.5px; }
+    .d3-chart .line-egress { fill: none; stroke: var(--color-alert); stroke-width: 1.5px; }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "rxjs": "https://esm.sh/rxjs@^7.8.2?conditions=es2015",
+    "rxjs/operators": "https://esm.sh/rxjs@^7.8.2/operators?conditions=es2015",
+    "rxjs/ajax": "https://esm.sh/rxjs@^7.8.2/ajax?conditions=es2015",
+    "rxjs/webSocket": "https://esm.sh/rxjs@^7.8.2/webSocket?conditions=es2015",
+    "rxjs/testing": "https://esm.sh/rxjs@^7.8.2/testing?conditions=es2015",
+    "rxjs/fetch": "https://esm.sh/rxjs@^7.8.2/fetch?conditions=es2015",
+    "@angular/compiler": "https://esm.sh/@angular/compiler@^21.0.6?external=rxjs",
+    "@angular/platform-browser": "https://esm.sh/@angular/platform-browser@^21.0.6?external=rxjs",
+    "@angular/core": "https://esm.sh/@angular/core@^21.0.6?external=rxjs",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0?external=rxjs",
+    "@angular/common": "https://esm.sh/@angular/common@^21.0.6?external=rxjs",
+    "@angular/forms": "https://esm.sh/@angular/forms@^21.0.6?external=rxjs"
+  }
+}
+</script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

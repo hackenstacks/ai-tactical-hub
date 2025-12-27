@@ -1,0 +1,203 @@
+
+<div class="fixed inset-0 flex flex-col pointer-events-none crt-scanline z-50"></div>
+
+<!-- Login Layer -->
+@if (!isAuthenticated()) {
+  <div class="fixed inset-0 z-40 bg-black flex items-center justify-center p-4">
+    <div class="max-w-md w-full border-2 theme-border p-8 shadow-[0_0_30px_rgba(0,255,0,0.2)] bg-black">
+      <h1 class="text-3xl font-bold mb-2 text-center tracking-tighter theme-text">TACTICAL HUB</h1>
+      <div class="text-xs text-center text-green-700 mb-8">QUANTUM RESISTANT ENCRYPTION LAYER</div>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs mb-1 text-green-600">PASSPHRASE</label>
+          <input #passInput type="password" 
+                 class="w-full bg-black border theme-border theme-text p-3 focus:outline-none focus:border-green-400"
+                 (keyup.enter)="login(passInput.value)">
+        </div>
+        <button (click)="login(passInput.value)" 
+                class="w-full bg-green-900/30 border theme-border py-3 theme-text font-bold hover:bg-green-800/50 transition-all uppercase">
+          Authenticate
+        </button>
+        
+        @if (loginError()) {
+          <div class="text-red-500 text-center text-xs animate-pulse">INVALID CREDENTIALS</div>
+        }
+        
+        <div class.="text-center text-[10px] text-green-800 mt-4">
+          {{ securityService.hasVault() ? 'ENCRYPTED VAULT DETECTED' : 'INITIALIZING NEW VAULT' }}
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Main Hub Interface -->
+@if (isAuthenticated()) {
+  <div class="h-screen w-screen flex flex-col bg-neutral-950 theme-text relative">
+    
+    <!-- Top Toolbar -->
+    <header class="h-12 border-b theme-border flex justify-between items-center px-4 shrink-0 bg-black/80 backdrop-blur-sm">
+      <div class="flex items-center gap-4">
+        <button (click)="showSidebar.set(!showSidebar())" class="hover:text-white transition-colors">☰</button>
+        <span class="font-bold tracking-tight">TACTICAL HUB <span class="text-[10px] opacity-50">v2.3</span></span>
+      </div>
+      
+      <div class="flex items-center gap-4 text-xs">
+        <div class="hidden md:block opacity-60">AES-256-GCM [SECURE]</div>
+        <div class="hidden md:block">{{ time() }}</div>
+        <div class="relative">
+          <button (click)="showCogMenu.set(!showCogMenu())" class="text-xl hover:rotate-90 transition-transform duration-300">⚙️</button>
+          @if (showCogMenu()) {
+            <div class="absolute right-0 top-full mt-2 w-48 theme-bg border theme-border shadow-lg z-50">
+              <button (click)="toggleTheme()" class="block w-full text-left px-4 py-2 hover:bg-white/10">Cycle Theme</button>
+              <button (click)="importData()" class="block w-full text-left px-4 py-2 hover:bg-white/10">Import Data</button>
+              <button (click)="exportData()" class="block w-full text-left px-4 py-2 hover:bg-white/10">Export Data</button>
+              <button (click)="persistData()" class="block w-full text-left px-4 py-2 hover:bg-white/10">Force Save</button>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden">
+      
+      <!-- Sidebar Roster -->
+      @if (showSidebar()) {
+        <aside class="w-64 border-r theme-border flex flex-col theme-dim-bg/20 transition-all duration-300">
+           <div class="p-2 border-b theme-border flex justify-between items-center"><span class="text-xs font-bold">ROSTER ({{characters().length}})</span><button (click)="openCharEditor()" class="text-xs border theme-border px-2 hover:bg-green-900/50">+ NEW</button></div>
+           <div class="flex-1 overflow-y-auto p-2 space-y-2">
+             @for (char of characters(); track char.id) {
+               <div class="group relative p-2 border border-transparent hover:border-green-500/50 cursor-pointer transition-colors id-card-trigger" [class.theme-dim-bg]="activeCharacter()?.id === char.id" (click)="startChat(char)">
+                 <div class="flex items-center gap-3">
+                   <div class="w-8 h-8 rounded-full border theme-border overflow-hidden bg-black flex items-center justify-center">
+                     @if (char.avatar_url) { <img [src]="char.avatar_url" class="w-full h-full object-cover"> } @else { <span>👤</span> }
+                   </div>
+                   <div class="truncate"><div class="font-bold text-sm truncate">{{char.name}}</div><div class="text-[10px] opacity-60 truncate">{{char.description || 'Entity'}}</div></div>
+                 </div>
+                 <div class="id-card-popup hidden absolute left-full top-0 ml-2 w-64 theme-bg border theme-border p-3 shadow-[0_0_20px_rgba(0,255,0,0.2)] z-50 flex-col gap-2">
+                    <div class="border-b theme-border pb-1 font-bold text-xs">ID: {{char.id.slice(-6)}}</div>
+                    <div class="text-[10px] italic opacity-70 line-clamp-3">{{char.description}}</div>
+                    <div class="flex gap-2 mt-2">
+                      <button (click)="openCharEditor(char); $event.stopPropagation()" class="flex-1 border theme-border text-[10px] hover:bg-white/10">EDIT</button>
+                      <button (click)="deleteCharacter(char.id); $event.stopPropagation()" class="flex-1 border border-red-900 text-red-500 text-[10px] hover:bg-red-900/20">DEL</button>
+                    </div>
+                 </div>
+               </div>
+             }
+           </div>
+        </aside>
+      }
+
+      <!-- Main Panel -->
+      <main class="flex-1 flex flex-col relative bg-black/40">
+        <div class="flex border-b theme-border bg-black/20">
+          <button (click)="switchTab('CHAT')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'CHAT'">COMM_LINK</button>
+          <button (click)="switchTab('TERMINAL')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'TERMINAL'">TERMINAL</button>
+          <button (click)="switchTab('BROWSER')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'BROWSER'">BROWSER</button>
+          <button (click)="switchTab('VAULT')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'VAULT'">VAULT</button>
+          <button (click)="switchTab('NEXUS')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'NEXUS'">NEXUS</button>
+        </div>
+
+        <div class="flex-1 overflow-auto relative">
+          
+          <!-- CHAT VIEW -->
+          @if (activeTab() === 'CHAT') {
+            @if (!activeCharacter()) {
+              <div class="h-full flex flex-col items-center justify-center opacity-30">
+                <div class="text-6xl mb-4">📡</div><div>NO UPLINK ESTABLISHED</div><div class="text-xs mt-2">SELECT ENTITY FROM ROSTER</div>
+              </div>
+            } @else {
+               <div class="flex flex-col h-full">
+                 <div class="p-2 border-b theme-border bg-black/30 flex justify-between items-center text-xs"><span>TARGET: {{activeCharacter()?.name}}</span><div class="flex gap-4"><label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" [checked]="false" (change)="$event.target && ($event.target['checked'] ? null : null)">COMIC_MODE</label><label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" [checked]="ttsEnabled()" (change)="ttsEnabled.set(!ttsEnabled())">VOICE_SYNTH</label></div></div>
+                 <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                   @for (msg of chatHistory(); track msg.timestamp) {
+                     <div class="flex flex-col gap-1 group">
+                       <div class="flex items-center gap-2 text-[10px] opacity-50" [class.flex-row-reverse]="msg.role === 'user'"><span>{{msg.role === 'user' ? 'OPERATOR' : activeCharacter()?.name}}</span><span>{{msg.timestamp | date:'HH:mm:ss'}}</span></div>
+                       <div class="relative border theme-border p-3 bg-black/50 shadow-sm" [ngClass]="{'border-r-4': msg.role === 'user', 'border-l-4': msg.role === 'model'}">
+                         @if (msg.image) { <div class="relative group/img"><img [src]="msg.image" class="mb-3 w-full object-cover max-h-64 border theme-border"><button (click)="saveImageToVault(msg.image, msg.text)" class="absolute top-1 right-1 bg-black/50 border theme-border p-1 text-xs opacity-0 group-hover/img:opacity-100 transition-opacity">💾 Save to Vault</button></div> }
+                         <div class="whitespace-pre-wrap font-sans text-sm md:text-base leading-relaxed">{{msg.text}}</div>
+                       </div>
+                     </div>
+                   }
+                   @if (isThinking()) { <div class="p-4 opacity-50 text-xs animate-pulse">AWAITING NEURAL RESPONSE...</div> }
+                 </div>
+                 <div class="p-4 border-t theme-border bg-black"><div class="flex gap-2"><input #chatInput type="text" class="flex-1 bg-transparent border theme-border p-2 focus:outline-none" placeholder="Transmit message..." (keydown.enter)="handleChatInput(chatInput)"><button (click)="handleChatInput(chatInput)" class="px-4 border theme-border hover:bg-white/10">SEND</button></div></div>
+               </div>
+            }
+          }
+
+          <!-- TERMINAL VIEW / BROWSER VIEW / VAULT VIEW -->
+          @if (activeTab() === 'TERMINAL') { <div #terminalDiv class="h-full w-full bg-black p-2"></div> }
+          @if (activeTab() === 'BROWSER') { <div class="h-full flex flex-col"><div class="p-2 border-b theme-border flex gap-2"><input [formControl]="browserUrl" (keydown.enter)="submitBrowse()" type="text" class="flex-1 bg-black border theme-border p-2" placeholder="https://"><button (click)="submitBrowse()" class="px-4 border theme-border hover:bg-white/10">GO</button></div><div class="flex-1 overflow-y-auto p-4"> @if (isBrowsing()) { <div class="text-center opacity-50 animate-pulse">ACCESSING URL...</div> } @if (browserContent(); as content) { <h3 class="font-bold border-b theme-border pb-2 mb-4">SUMMARY</h3><p class="mb-6 whitespace-pre-wrap">{{ content.summary }}</p> @if (content.images.length > 0) { <h3 class="font-bold border-b theme-border pb-2 mb-4">EXTRACTED IMAGES</h3><div class="grid grid-cols-3 gap-4">@for (img of content.images; track img) { <img [src]="img" class="w-full h-auto object-cover border-2 theme-border"> }</div> } } </div></div> }
+          @if (activeTab() === 'VAULT') { <div class="h-full flex"><div class="w-48 border-r theme-border flex flex-col"> @for (cat of ['Notes', 'Images', 'Snippets']; track cat) { <button (click)="activeVaultCategory.set(cat)" class="p-3 text-left text-sm border-b theme-border hover:bg-white/10" [class.theme-dim-bg]="activeVaultCategory() === cat">{{cat}}</button> } </div><div class="flex-1 overflow-y-auto"> @switch (activeVaultCategory()) { @case ('Notes') { <div class="h-full flex"><div class="w-64 border-r theme-border flex flex-col"><div class="p-2 border-b theme-border"><button (click)="addNote()" class="w-full text-xs border theme-border p-1 hover:bg-white/10">+ NEW NOTE</button></div><div class="flex-1 overflow-y-auto"> @for (note of vaultData().notes; track note.id) { <div (click)="activeNote.set(note)" class="p-2 border-b theme-border cursor-pointer hover:bg-white/5" [class.theme-dim-bg]="activeNote()?.id === note.id"><div class="font-bold truncate">{{note.title}}</div><div class="text-xs opacity-50">{{note.timestamp | date:'short'}}</div></div> } </div></div><div class="flex-1 flex flex-col"> @if (activeNote(); as note) { <div class="p-2 border-b theme-border flex justify-between items-center"><input [value]="note.title" (input)="$event.target && (note.title = $event.target['value'])" class="bg-transparent font-bold focus:outline-none w-full"><button (click)="deleteNote(note.id)" class="text-red-500 text-xs">[DEL]</button></div><textarea [value]="note.content" (input)="$event.target && updateNoteContent($event.target['value'])" class="flex-1 bg-black p-4 resize-none focus:outline-none font-mono"></textarea> } @else { <div class="p-8 text-center opacity-50">Select a note or create a new one.</div> } </div></div> } @case ('Images') { <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4"> @for (image of vaultData().images; track image.id) { <div class="group relative border theme-border bg-black"><img [src]="image.url" class="w-full h-48 object-cover"><div class="absolute bottom-0 left-0 right-0 bg-black/80 p-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"><p class="truncate"><strong>PROMPT:</strong> {{image.prompt}}</p><button (click)="deleteImage(image.id)" class="absolute top-1 right-1 text-red-500">[x]</button></div></div> } @if (vaultData().images.length === 0) { <p class="col-span-full text-center opacity-50">No images saved.</p> } </div> } @case ('Snippets') { <div class="p-4"><form [formGroup]="snippetForm" (ngSubmit)="addSnippet()" class="mb-4 flex gap-2 border theme-border p-2"><input formControlName="title" class="bg-black p-2 border theme-border w-1/3" placeholder="Title..."><input formControlName="content" class="bg-black p-2 border theme-border flex-1" placeholder="Content/Command..."><button type="submit" class="px-4 border theme-border hover:bg-white/10">SAVE</button></form><div class="space-y-2"> @for (snippet of vaultData().snippets; track snippet.id) { <div class="bg-black/50 border theme-border p-2 flex justify-between items-center font-mono text-sm"><div><strong>{{snippet.title}}:</strong> {{snippet.content}}</div><button (click)="deleteSnippet(snippet.id)" class="text-red-500 text-xs">[DEL]</button></div> } </div></div> } } </div></div> }
+          
+          <!-- NEXUS MONITOR VIEW -->
+          @if (activeTab() === 'NEXUS') {
+            <div class="h-full overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- System Resources -->
+              <div class="md:col-span-3 text-sm font-bold border-b-2 theme-border pb-1 mb-2">SYSTEM STATUS</div>
+              <div class="border theme-border p-4 bg-black/30">
+                <h3 class="font-bold text-xs mb-3">CPU LOAD</h3>
+                <div class="w-full theme-dim-bg border theme-border h-6"><div class="h-full theme-bg" [style.width.%]="systemMetrics().cpu"></div></div>
+                <div class="text-right mt-1 font-mono text-lg">{{ systemMetrics().cpu.toFixed(2) }}%</div>
+              </div>
+              <div class="border theme-border p-4 bg-black/30">
+                <h3 class="font-bold text-xs mb-3">MEMORY USAGE</h3>
+                <div class="w-full theme-dim-bg border theme-border h-6"><div class="h-full theme-bg" [style.width.%]="systemMetrics().mem"></div></div>
+                <div class="text-right mt-1 font-mono text-lg">{{ systemMetrics().mem.toFixed(2) }}%</div>
+              </div>
+              <div class="border theme-border p-4 bg-black/30">
+                <h3 class="font-bold text-xs mb-3">VAULT STORAGE (5MB MAX)</h3>
+                <div class="w-full theme-dim-bg border theme-border h-6"><div class="h-full theme-bg" [style.width.%]="systemMetrics().vaultStorage"></div></div>
+                <div class="text-right mt-1 font-mono text-lg">{{ systemMetrics().vaultStorage.toFixed(2) }}%</div>
+              </div>
+
+              <!-- Network Traffic -->
+              <div class="md:col-span-3 text-sm font-bold border-b-2 theme-border pb-1 my-2">NETWORK TRAFFIC</div>
+              <div class="md:col-span-3 border theme-border p-4 bg-black/30 h-64">
+                <div #networkChart class="w-full h-full"></div>
+              </div>
+
+              <!-- Active Connections -->
+              <div class="md:col-span-3 text-sm font-bold border-b-2 theme-border pb-1 my-2">ACTIVE CONNECTIONS</div>
+              <div class="md:col-span-3 border theme-border bg-black/30 font-mono text-xs h-64 overflow-y-auto">
+                <div class="grid grid-cols-5 p-2 border-b theme-border font-bold"><div>SOURCE IP</div><div>DESTINATION IP</div><div>PORT</div><div>PROTOCOL</div><div>STATUS</div></div>
+                @for(conn of networkConnections(); track conn.id){
+                  <div class="grid grid-cols-5 p-2 border-b border-green-900/50" [class.text-red-500]="conn.destIp.startsWith('104')">
+                    <div>{{conn.srcIp}}</div><div>{{conn.destIp}}</div><div>{{conn.port}}</div><div>{{conn.protocol}}</div><div>{{conn.status}}</div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      </main>
+    </div>
+  </div>
+}
+
+<!-- Character Editor Modal -->
+@if (showCharEditor()) {
+  <div class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="w-full max-w-4xl bg-black border-2 theme-border h-[80vh] flex flex-col shadow-2xl">
+      <div class="p-4 border-b theme-border flex justify-between items-center bg-green-900/20"><h2 class="font-bold">ENTITY EDITOR v2.1</h2><button (click)="showCharEditor.set(false)" class="text-red-500 hover:text-white">✕</button></div>
+      <div class="flex-1 overflow-y-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-4">
+          <div><label class="block text-xs mb-1 opacity-70">NAME</label><input [formControl]="charForm.controls.name" class="w-full bg-black border theme-border p-2"></div>
+          <div><label class="block text-xs mb-1 opacity-70">ROLE / SHORT DESC</label><input [formControl]="charForm.controls.description" class="w-full bg-black border theme-border p-2"></div>
+          <div><label class="block text-xs mb-1 opacity-70">AVATAR URL</label><input [formControl]="charForm.controls.avatar_url" class="w-full bg-black border theme-border p-2"></div>
+          <div><label class="block text-xs mb-1 opacity-70">PERSONALITY</label><textarea [formControl]="charForm.controls.personality" rows="6" class="w-full bg-black border theme-border p-2"></textarea></div>
+        </div>
+        <div class="space-y-4">
+          <div><label class="block text-xs mb-1 opacity-70">FIRST MESSAGE</label><textarea [formControl]="charForm.controls.first_mes" rows="4" class="w-full bg-black border theme-border p-2"></textarea></div>
+          <div><label class="block text-xs mb-1 opacity-70">SCENARIO</label><textarea [formControl]="charForm.controls.scenario" rows="3" class="w-full bg-black border theme-border p-2"></textarea></div>
+          <div><label class="block text-xs mb-1 opacity-70">SYSTEM PROMPT</label><textarea [formControl]="charForm.controls.system_prompt" rows="3" class="w-full bg-black border theme-border p-2"></textarea></div>
+        </div>
+      </div>
+      <div class="p-4 border-t theme-border flex justify-between items-center bg-black"><div class="text-xs opacity-50">V2 CARD COMPATIBLE</div><button (click)="saveCharacter()" class="bg-green-700 text-black px-6 py-2 font-bold hover:bg-green-500">SAVE ENTITY</button></div>
+    </div>
+  </div>
+}
+
+<input type="file" #fileInput (change)="handleFileImport($event)" class="hidden" accept=".json">
