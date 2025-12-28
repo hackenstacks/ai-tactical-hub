@@ -40,7 +40,7 @@
     <header class="h-12 border-b theme-border flex justify-between items-center px-4 shrink-0 bg-black/80 backdrop-blur-sm">
       <div class="flex items-center gap-4">
         <button (click)="showSidebar.set(!showSidebar())" class="hover:text-white transition-colors">☰</button>
-        <span class="font-bold tracking-tight">TACTICAL HUB <span class="text-[10px] opacity-50">v2.3</span></span>
+        <span class="font-bold tracking-tight">TACTICAL HUB <span class="text-[10px] opacity-50">v2.4</span></span>
       </div>
       
       <div class="flex items-center gap-4 text-xs">
@@ -96,78 +96,129 @@
           <button (click)="switchTab('TERMINAL')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'TERMINAL'">TERMINAL</button>
           <button (click)="switchTab('BROWSER')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'BROWSER'">BROWSER</button>
           <button (click)="switchTab('VAULT')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'VAULT'">VAULT</button>
-          <button (click)="switchTab('NEXUS')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'NEXUS'">NEXUS</button>
+          <button (click)="switchTab('API')" class="px-4 py-2 text-xs font-bold border-r theme-border hover:bg-white/5" [class.theme-dim-bg]="activeTab() === 'API'">API</button>
         </div>
 
         <div class="flex-1 overflow-auto relative">
           
-          <!-- CHAT VIEW -->
-          @if (activeTab() === 'CHAT') {
-            @if (!activeCharacter()) {
-              <div class="h-full flex flex-col items-center justify-center opacity-30">
-                <div class="text-6xl mb-4">📡</div><div>NO UPLINK ESTABLISHED</div><div class="text-xs mt-2">SELECT ENTITY FROM ROSTER</div>
+          <!-- CHAT VIEW / TERMINAL / BROWSER / VAULT (shortened for brevity) -->
+          @if (activeTab() === 'CHAT') { @if (!activeCharacter()) { <div class="h-full flex flex-col items-center justify-center opacity-30"><div class="text-6xl mb-4">📡</div><div>NO UPLINK ESTABLISHED</div><div class="text-xs mt-2">SELECT ENTITY FROM ROSTER</div></div> } @else { <div class="flex flex-col h-full"><div class="p-2 border-b theme-border bg-black/30 flex justify-between items-center text-xs"><span>TARGET: {{activeCharacter()?.name}}</span><div class="flex gap-4"><label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" [checked]="ttsEnabled()" (change)="ttsEnabled.set(!ttsEnabled())">VOICE_SYNTH</label></div></div><div class="flex-1 overflow-y-auto p-4 space-y-6"> @for (msg of chatHistory(); track msg.timestamp) { <div class="flex flex-col gap-1 group"><div class="flex items-center gap-2 text-[10px] opacity-50" [class.flex-row-reverse]="msg.role === 'user'"><span>{{msg.role === 'user' ? 'OPERATOR' : activeCharacter()?.name}}</span><span>{{msg.timestamp | date:'HH:mm:ss'}}</span></div><div class="relative border theme-border p-3 bg-black/50 shadow-sm"> @if (msg.image) { <div class="relative group/img"><img [src]="msg.image" class="mb-3 w-full object-cover max-h-64 border theme-border"><button (click)="saveImageToVault(msg.image, msg.text)" class="absolute top-1 right-1 bg-black/50 border theme-border p-1 text-xs opacity-0 group-hover/img:opacity-100 transition-opacity">💾 Save to Vault</button></div> }<div class="whitespace-pre-wrap font-sans text-sm md:text-base leading-relaxed">{{msg.text}}</div></div></div> } @if (isThinking()) { <div class="p-4 opacity-50 text-xs animate-pulse">AWAITING NEURAL RESPONSE...</div> } </div><div class="p-4 border-t theme-border bg-black"><div class="flex gap-2"><input #chatInput type="text" class="flex-1 bg-transparent border theme-border p-2 focus:outline-none" placeholder="Transmit message..." (keydown.enter)="handleChatInput(chatInput)"><button (click)="handleChatInput(chatInput)" class="px-4 border theme-border hover:bg-white/10">SEND</button></div></div></div> } }
+          @if (activeTab() === 'TERMINAL') { <div #terminalDiv class="h-full w-full bg-black p-2"></div> }
+          
+          <!-- BROWSER TAB -->
+          @if (activeTab() === 'BROWSER') {
+            <div class="h-full flex flex-col">
+              <div class="p-2 border-b theme-border flex flex-col gap-2">
+                <div class="flex gap-2">
+                   <input [formControl]="browserUrl" (keydown.enter)="submitBrowse()" type="text" class="flex-1 bg-black border theme-border p-2" placeholder="https://site.com or https://search.com#query">
+                   <button (click)="submitBrowse()" class="px-4 border theme-border hover:bg-white/10">GO</button>
+                </div>
+                <div class="flex gap-4 text-xs items-center">
+                  <label class="flex items-center gap-1 cursor-pointer">
+                    <input type="checkbox" [checked]="browserOptions().includeImages" (change)="toggleBrowserImageOption($any($event.target).checked)"> 
+                    LOAD IMAGES
+                  </label>
+                  <span class="opacity-50">|</span>
+                  <span class="opacity-50">Use # after URL for search queries</span>
+                </div>
               </div>
-            } @else {
-               <div class="flex flex-col h-full">
-                 <div class="p-2 border-b theme-border bg-black/30 flex justify-between items-center text-xs"><span>TARGET: {{activeCharacter()?.name}}</span><div class="flex gap-4"><label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" [checked]="false" (change)="$event.target && ($event.target['checked'] ? null : null)">COMIC_MODE</label><label class="flex items-center gap-1 cursor-pointer"><input type="checkbox" [checked]="ttsEnabled()" (change)="ttsEnabled.set(!ttsEnabled())">VOICE_SYNTH</label></div></div>
-                 <div class="flex-1 overflow-y-auto p-4 space-y-6">
-                   @for (msg of chatHistory(); track msg.timestamp) {
-                     <div class="flex flex-col gap-1 group">
-                       <div class="flex items-center gap-2 text-[10px] opacity-50" [class.flex-row-reverse]="msg.role === 'user'"><span>{{msg.role === 'user' ? 'OPERATOR' : activeCharacter()?.name}}</span><span>{{msg.timestamp | date:'HH:mm:ss'}}</span></div>
-                       <div class="relative border theme-border p-3 bg-black/50 shadow-sm" [ngClass]="{'border-r-4': msg.role === 'user', 'border-l-4': msg.role === 'model'}">
-                         @if (msg.image) { <div class="relative group/img"><img [src]="msg.image" class="mb-3 w-full object-cover max-h-64 border theme-border"><button (click)="saveImageToVault(msg.image, msg.text)" class="absolute top-1 right-1 bg-black/50 border theme-border p-1 text-xs opacity-0 group-hover/img:opacity-100 transition-opacity">💾 Save to Vault</button></div> }
-                         <div class="whitespace-pre-wrap font-sans text-sm md:text-base leading-relaxed">{{msg.text}}</div>
-                       </div>
-                     </div>
-                   }
-                   @if (isThinking()) { <div class="p-4 opacity-50 text-xs animate-pulse">AWAITING NEURAL RESPONSE...</div> }
-                 </div>
-                 <div class="p-4 border-t theme-border bg-black"><div class="flex gap-2"><input #chatInput type="text" class="flex-1 bg-transparent border theme-border p-2 focus:outline-none" placeholder="Transmit message..." (keydown.enter)="handleChatInput(chatInput)"><button (click)="handleChatInput(chatInput)" class="px-4 border theme-border hover:bg-white/10">SEND</button></div></div>
-               </div>
-            }
+              
+              <div class="flex-1 overflow-y-auto p-4 relative">
+                @if (isBrowsing()) { 
+                   <div class="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-10">
+                     <div class="text-center animate-pulse">ESTABLISHING SECURE CONNECTION...</div> 
+                   </div>
+                }
+                
+                @if (browserContent(); as content) {
+                  <div class="flex justify-between items-start border-b theme-border pb-2 mb-4">
+                    <h3 class="font-bold text-lg">{{ content.title }}</h3>
+                    <div class="flex gap-2">
+                      <button (click)="submitBrowse('reader')" class="text-xs border theme-border px-2 py-1 hover:bg-white/10" title="Fetch full text">READER MODE</button>
+                      <button (click)="saveBrowserToVault()" class="text-xs border theme-border px-2 py-1 hover:bg-white/10" title="Save to Vault">SAVE</button>
+                      <button (click)="openBrowserExternal()" class="text-xs border theme-border px-2 py-1 hover:bg-white/10" title="Open in real browser">OPEN EXT</button>
+                    </div>
+                  </div>
+                  
+                  <p class="mb-6 whitespace-pre-wrap leading-relaxed font-sans text-sm">{{ content.content }}</p>
+                  
+                  @if (content.images.length > 0) {
+                    <h3 class="font-bold border-b theme-border pb-2 mb-4">MEDIA ASSETS</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      @for (img of content.images; track img) { 
+                        <div class="group relative">
+                           <img [src]="img" class="w-full h-32 object-cover border theme-border bg-black">
+                           <button (click)="saveImageToVault(img, content.title)" class="absolute bottom-1 right-1 bg-black/70 border theme-border p-1 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">SAVE</button>
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            </div>
           }
 
-          <!-- TERMINAL VIEW / BROWSER VIEW / VAULT VIEW -->
-          @if (activeTab() === 'TERMINAL') { <div #terminalDiv class="h-full w-full bg-black p-2"></div> }
-          @if (activeTab() === 'BROWSER') { <div class="h-full flex flex-col"><div class="p-2 border-b theme-border flex gap-2"><input [formControl]="browserUrl" (keydown.enter)="submitBrowse()" type="text" class="flex-1 bg-black border theme-border p-2" placeholder="https://"><button (click)="submitBrowse()" class="px-4 border theme-border hover:bg-white/10">GO</button></div><div class="flex-1 overflow-y-auto p-4"> @if (isBrowsing()) { <div class="text-center opacity-50 animate-pulse">ACCESSING URL...</div> } @if (browserContent(); as content) { <h3 class="font-bold border-b theme-border pb-2 mb-4">SUMMARY</h3><p class="mb-6 whitespace-pre-wrap">{{ content.summary }}</p> @if (content.images.length > 0) { <h3 class="font-bold border-b theme-border pb-2 mb-4">EXTRACTED IMAGES</h3><div class="grid grid-cols-3 gap-4">@for (img of content.images; track img) { <img [src]="img" class="w-full h-auto object-cover border-2 theme-border"> }</div> } } </div></div> }
           @if (activeTab() === 'VAULT') { <div class="h-full flex"><div class="w-48 border-r theme-border flex flex-col"> @for (cat of ['Notes', 'Images', 'Snippets']; track cat) { <button (click)="activeVaultCategory.set(cat)" class="p-3 text-left text-sm border-b theme-border hover:bg-white/10" [class.theme-dim-bg]="activeVaultCategory() === cat">{{cat}}</button> } </div><div class="flex-1 overflow-y-auto"> @switch (activeVaultCategory()) { @case ('Notes') { <div class="h-full flex"><div class="w-64 border-r theme-border flex flex-col"><div class="p-2 border-b theme-border"><button (click)="addNote()" class="w-full text-xs border theme-border p-1 hover:bg-white/10">+ NEW NOTE</button></div><div class="flex-1 overflow-y-auto"> @for (note of vaultData().notes; track note.id) { <div (click)="activeNote.set(note)" class="p-2 border-b theme-border cursor-pointer hover:bg-white/5" [class.theme-dim-bg]="activeNote()?.id === note.id"><div class="font-bold truncate">{{note.title}}</div><div class="text-xs opacity-50">{{note.timestamp | date:'short'}}</div></div> } </div></div><div class="flex-1 flex flex-col"> @if (activeNote(); as note) { <div class="p-2 border-b theme-border flex justify-between items-center"><input [value]="note.title" (input)="$event.target && (note.title = $event.target['value'])" class="bg-transparent font-bold focus:outline-none w-full"><button (click)="deleteNote(note.id)" class="text-red-500 text-xs">[DEL]</button></div><textarea [value]="note.content" (input)="$event.target && updateNoteContent($event.target['value'])" class="flex-1 bg-black p-4 resize-none focus:outline-none font-mono"></textarea> } @else { <div class="p-8 text-center opacity-50">Select a note or create a new one.</div> } </div></div> } @case ('Images') { <div class="p-4 grid grid-cols-2 md:grid-cols-4 gap-4"> @for (image of vaultData().images; track image.id) { <div class="group relative border theme-border bg-black"><img [src]="image.url" class="w-full h-48 object-cover"><div class="absolute bottom-0 left-0 right-0 bg-black/80 p-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"><p class="truncate"><strong>PROMPT:</strong> {{image.prompt}}</p><button (click)="deleteImage(image.id)" class="absolute top-1 right-1 text-red-500">[x]</button></div></div> } @if (vaultData().images.length === 0) { <p class="col-span-full text-center opacity-50">No images saved.</p> } </div> } @case ('Snippets') { <div class="p-4"><form [formGroup]="snippetForm" (ngSubmit)="addSnippet()" class="mb-4 flex gap-2 border theme-border p-2"><input formControlName="title" class="bg-black p-2 border theme-border w-1/3" placeholder="Title..."><input formControlName="content" class="bg-black p-2 border theme-border flex-1" placeholder="Content/Command..."><button type="submit" class="px-4 border theme-border hover:bg-white/10">SAVE</button></form><div class="space-y-2"> @for (snippet of vaultData().snippets; track snippet.id) { <div class="bg-black/50 border theme-border p-2 flex justify-between items-center font-mono text-sm"><div><strong>{{snippet.title}}:</strong> {{snippet.content}}</div><button (click)="deleteSnippet(snippet.id)" class="text-red-500 text-xs">[DEL]</button></div> } </div></div> } } </div></div> }
           
-          <!-- NEXUS MONITOR VIEW -->
-          @if (activeTab() === 'NEXUS') {
-            <div class="h-full overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <!-- System Resources -->
-              <div class="md:col-span-3 text-sm font-bold border-b-2 theme-border pb-1 mb-2">SYSTEM STATUS</div>
-              <div class="border theme-border p-4 bg-black/30">
-                <h3 class="font-bold text-xs mb-3">CPU LOAD</h3>
-                <div class="w-full theme-dim-bg border theme-border h-6"><div class="h-full theme-bg" [style.width.%]="systemMetrics().cpu"></div></div>
-                <div class="text-right mt-1 font-mono text-lg">{{ systemMetrics().cpu.toFixed(2) }}%</div>
-              </div>
-              <div class="border theme-border p-4 bg-black/30">
-                <h3 class="font-bold text-xs mb-3">MEMORY USAGE</h3>
-                <div class="w-full theme-dim-bg border theme-border h-6"><div class="h-full theme-bg" [style.width.%]="systemMetrics().mem"></div></div>
-                <div class="text-right mt-1 font-mono text-lg">{{ systemMetrics().mem.toFixed(2) }}%</div>
-              </div>
-              <div class="border theme-border p-4 bg-black/30">
-                <h3 class="font-bold text-xs mb-3">VAULT STORAGE (5MB MAX)</h3>
-                <div class="w-full theme-dim-bg border theme-border h-6"><div class="h-full theme-bg" [style.width.%]="systemMetrics().vaultStorage"></div></div>
-                <div class="text-right mt-1 font-mono text-lg">{{ systemMetrics().vaultStorage.toFixed(2) }}%</div>
+          <!-- API TAB -->
+          @if (activeTab() === 'API') {
+            <div class="h-full overflow-y-auto p-4 flex flex-col gap-4">
+              <div class="border theme-border bg-black/30 p-4 flex justify-between items-center">
+                <div>
+                  <h3 class="font-bold text-xs mb-1">API KEY</h3>
+                  <div class="font-mono text-sm bg-black p-2 border theme-border">{{ apiKey() || 'No key generated.' }}</div>
+                </div>
+                <button (click)="generateApiKey()" class="border theme-border px-4 py-2 hover:bg-white/10 text-xs">GENERATE KEY</button>
               </div>
 
-              <!-- Network Traffic -->
-              <div class="md:col-span-3 text-sm font-bold border-b-2 theme-border pb-1 my-2">NETWORK TRAFFIC</div>
-              <div class="md:col-span-3 border theme-border p-4 bg-black/30 h-64">
-                <div #networkChart class="w-full h-full"></div>
-              </div>
-
-              <!-- Active Connections -->
-              <div class="md:col-span-3 text-sm font-bold border-b-2 theme-border pb-1 my-2">ACTIVE CONNECTIONS</div>
-              <div class="md:col-span-3 border theme-border bg-black/30 font-mono text-xs h-64 overflow-y-auto">
-                <div class="grid grid-cols-5 p-2 border-b theme-border font-bold"><div>SOURCE IP</div><div>DESTINATION IP</div><div>PORT</div><div>PROTOCOL</div><div>STATUS</div></div>
-                @for(conn of networkConnections(); track conn.id){
-                  <div class="grid grid-cols-5 p-2 border-b border-green-900/50" [class.text-red-500]="conn.destIp.startsWith('104')">
-                    <div>{{conn.srcIp}}</div><div>{{conn.destIp}}</div><div>{{conn.port}}</div><div>{{conn.protocol}}</div><div>{{conn.status}}</div>
+              <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
+                <!-- Left Panel: Console & Docs -->
+                <div class="flex flex-col gap-4 min-h-0">
+                  <div class="flex-1 flex flex-col border theme-border bg-black/30 min-h-0">
+                    <h3 class="font-bold text-xs p-2 border-b theme-border">API CONSOLE</h3>
+                    <div class="flex-1 p-2 overflow-y-auto"><pre class="whitespace-pre-wrap text-xs">{{ apiResponse() }}</pre></div>
+                    <div class="p-2 border-t theme-border">
+                      <input #apiInput (keydown.enter)="handleApiCommand(apiInput.value); apiInput.value=''" type="text" class="w-full bg-black border theme-border p-2 font-mono text-xs" placeholder="> METHOD /path/to/resource">
+                    </div>
                   </div>
-                }
+                  <div class="border theme-border bg-black/30 p-2">
+                     <h3 class="font-bold text-xs p-1 border-b theme-border mb-2">ENDPOINTS</h3>
+                     <div class="text-[10px] font-mono grid grid-cols-2 gap-x-4">
+                       <p>GET /characters</p><p>GET /characters/:id</p>
+                       <p>GET /vault</p><p>GET /vault/notes</p>
+                       <p>GET /vault/images</p><p>GET /vault/snippets</p>
+                       <p>POST /chat [message]</p>
+                     </div>
+                  </div>
+                </div>
+
+                <!-- Right Panel: Monitoring -->
+                <div class="flex flex-col gap-4 min-h-0">
+                  <div class="grid grid-cols-2 gap-4">
+                     <div class="border theme-border bg-black/30 p-4">
+                       <h3 class="font-bold text-xs mb-2">TOTAL CALLS</h3>
+                       <p class="font-mono text-3xl">{{ apiRateMonitor().totalCalls }}</p>
+                     </div>
+                     <div class="border theme-border bg-black/30 p-4">
+                       <h3 class="font-bold text-xs mb-2">CALLS / LAST 60s</h3>
+                       <p class="font-mono text-3xl">{{ apiRateMonitor().callsLastMinute }}</p>
+                     </div>
+                  </div>
+                  <div class="flex-1 flex flex-col border theme-border bg-black/30 min-h-0">
+                    <h3 class="font-bold text-xs p-2 border-b theme-border">API CALL LOG (DEBUG)</h3>
+                    <div class="flex-1 overflow-y-auto font-mono text-[10px]">
+                      @for(log of apiLog(); track log.timestamp) {
+                        <div class="grid grid-cols-12 p-1 border-b border-green-900/50 items-center">
+                          <div class="col-span-3">{{ log.timestamp | date:'HH:mm:ss.SSS' }}</div>
+                          <div class="col-span-2" [class.text-cyan-400]="log.method==='POST'" [class.text-amber-400]="log.method==='GET'">{{ log.method }}</div>
+                          <div class="col-span-5 truncate">{{ log.path }}</div>
+                          <div class="col-span-2 text-right" [class.text-red-500]="log.status >= 400">{{ log.status }}</div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           }

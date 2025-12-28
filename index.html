@@ -9,7 +9,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
   <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
     
@@ -75,13 +74,6 @@
 
     .xterm-viewport { overflow-y: auto !important; }
 
-    /* D3 Chart styles */
-    .d3-chart .domain { stroke: var(--color-accent); }
-    .d3-chart .tick line { stroke: var(--color-dim); }
-    .d3-chart .tick text { fill: var(--color-text); font-size: 10px; }
-    .d3-chart .grid-line { stroke: var(--color-dim); stroke-opacity: 0.7; shape-rendering: crispEdges; }
-    .d3-chart .line-ingress { fill: none; stroke: var(--color-text); stroke-width: 1.5px; }
-    .d3-chart .line-egress { fill: none; stroke: var(--color-alert); stroke-width: 1.5px; }
   </style>
 <script type="importmap">
 {
